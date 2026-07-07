@@ -1,290 +1,227 @@
-# `node-gyp` - Node.js native addon build tool
+# rc
 
-[![Build Status](https://github.com/nodejs/node-gyp/workflows/Tests/badge.svg?branch=main)](https://github.com/nodejs/node-gyp/actions?query=workflow%3ATests+branch%3Amain)
-![npm](https://img.shields.io/npm/dm/node-gyp)
+The non-configurable configuration loader for lazy people.
 
-`node-gyp` is a cross-platform command-line tool written in Node.js for
-compiling native addon modules for Node.js. It contains a vendored copy of the
-[gyp-next](https://github.com/nodejs/gyp-next) project that was previously used
-by the Chromium team and extended to support the development of Node.js native
-addons.
+## Usage
 
-Note that `node-gyp` is _not_ used to build Node.js itself.
+The only option is to pass rc the name of your app, and your default configuration.
 
-All current and LTS target versions of Node.js are supported. Depending on what version of Node.js is actually installed on your system
-`node-gyp` downloads the necessary development files or headers for the target version. List of stable Node.js versions can be found on [Node.js website](https://nodejs.org/en/about/previous-releases).
+```javascript
+var conf = require('rc')(appname, {
+  //defaults go here.
+  port: 2468,
 
-## Features
-
- * The same build commands work on any of the supported platforms
- * Supports the targeting of different versions of Node.js
-
-## Installation
-
-> [!Important]
-> Python >= v3.12 requires `node-gyp` >= v10
-
-You can install `node-gyp` using `npm`:
-
-``` bash
-npm install -g node-gyp
+  //defaults which are objects will be merged, not replaced
+  views: {
+    engine: 'jade'
+  }
+});
 ```
 
-Depending on your operating system, you will need to install:
+`rc` will return your configuration options merged with the defaults you specify.
+If you pass in a predefined defaults object, it will be mutated:
 
-### On Unix
-
-   * [A supported version of Python](https://devguide.python.org/versions/)
-   * `make`
-   * A proper C/C++ compiler toolchain, like [GCC](https://gcc.gnu.org)
-
-### On macOS
-
-   * [A supported version of Python](https://devguide.python.org/versions/)
-   * `Xcode Command Line Tools` which will install `clang`, `clang++`, and `make`.
-     * Install the `Xcode Command Line Tools` standalone by running `xcode-select --install`. -- OR --
-     * Alternatively, if you already have the [full Xcode installed](https://developer.apple.com/xcode/download/), you can install the Command Line Tools under the menu `Xcode -> Open Developer Tool -> More Developer Tools...`.
-
-
-### On Windows
-
-Install tools with [Chocolatey](https://chocolatey.org):
-``` bash
-choco install python visualstudio2022-workload-vctools -y
+```javascript
+var conf = {};
+require('rc')(appname, conf);
 ```
 
-Or install and configure Python and Visual Studio tools manually:
+If `rc` finds any config files for your app, the returned config object will have
+a `configs` array containing their paths:
 
-  * Follow the instructions in [Using Python on Windows](https://docs.python.org/3/using/windows.html) to install
-    the current [version of Python](https://www.python.org/downloads/).
-
-   * Install Visual C++ Build Environment: For Visual Studio 2019 or later, use the `Desktop development with C++` workload from [Visual Studio Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community).  For a version older than Visual Studio 2019, install [Visual Studio Build Tools](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools) with the `Visual C++ build tools` option.
-
-   To target native ARM64 Node.js on Windows on ARM, add the components "Visual C++ compilers and libraries for ARM64" and "Visual C++ ATL for ARM64".
-
-   To use the native ARM64 C++ compiler on Windows on ARM, ensure that you have Visual Studio 2022 [17.4 or later](https://devblogs.microsoft.com/visualstudio/arm64-visual-studio-is-officially-here/) installed.
-
-It's advised to install the following PowerShell module: [VSSetup](https://github.com/microsoft/vssetup.powershell) using `Install-Module VSSetup -Scope CurrentUser`.
-This will make Visual Studio detection logic use a more flexible and accessible method, avoiding PowerShell's `ConstrainedLanguage` mode.
-
-### Configuring Python Dependency
-
-`node-gyp` requires that you have installed a [supported version of Python](https://devguide.python.org/versions/).
-If you have multiple versions of Python installed, you can identify which version
-`node-gyp` should use in one of the following ways:
-
-1. by setting the `--python` command-line option, e.g.:
-
-``` bash
-node-gyp <command> --python /path/to/executable/python
+```javascript
+var appCfg = require('rc')(appname, conf);
+appCfg.configs[0] // /etc/appnamerc
+appCfg.configs[1] // /home/dominictarr/.config/appname
+appCfg.config // same as appCfg.configs[appCfg.configs.length - 1]
 ```
 
-2. If `node-gyp` is called by way of `npm`, *and* you have multiple versions of
-Python installed, then you can set the `npm_config_python` environment variable
-to the appropriate path:
-``` bash
-export npm_config_python=/path/to/executable/python
+## Standards
+
+Given your application name (`appname`), rc will look in all the obvious places for configuration.
+
+  * command line arguments, parsed by minimist _(e.g. `--foo baz`, also nested: `--foo.bar=baz`)_
+  * environment variables prefixed with `${appname}_`
+    * or use "\_\_" to indicate nested properties <br/> _(e.g. `appname_foo__bar__baz` => `foo.bar.baz`)_
+  * if you passed an option `--config file` then from that file
+  * a local `.${appname}rc` or the first found looking in `./ ../ ../../ ../../../` etc.
+  * `$HOME/.${appname}rc`
+  * `$HOME/.${appname}/config`
+  * `$HOME/.config/${appname}`
+  * `$HOME/.config/${appname}/config`
+  * `/etc/${appname}rc`
+  * `/etc/${appname}/config`
+  * the defaults object you passed in.
+
+All configuration sources that were found will be flattened into one object,
+so that sources **earlier** in this list override later ones.
+
+
+## Configuration File Formats
+
+Configuration files (e.g. `.appnamerc`) may be in either [json](http://json.org/example) or [ini](http://en.wikipedia.org/wiki/INI_file) format. **No** file extension (`.json` or `.ini`) should be used. The example configurations below are equivalent:
+
+
+#### Formatted as `ini`
+
 ```
-&nbsp;&nbsp;&nbsp;&nbsp;Or on Windows:
-```console
-py --list-paths  # To see the installed Python versions
-set npm_config_python=C:\path\to\python.exe  # CMD
-$Env:npm_config_python="C:\path\to\python.exe"  # PowerShell
-```
+; You can include comments in `ini` format if you want.
 
-3. If the `PYTHON` environment variable is set to the path of a Python executable,
-then that version will be used if it is a supported version.
+dependsOn=0.10.0
 
-4. If the `NODE_GYP_FORCE_PYTHON` environment variable is set to the path of a
-Python executable, it will be used instead of any of the other configured or
-built-in Python search paths. If it's not a compatible version, no further
-searching will be done.
 
-### Build for Third Party Node.js Runtimes
+; `rc` has built-in support for ini sections, see?
 
-When building modules for third-party Node.js runtimes like Electron, which have
-different build configurations from the official Node.js distribution, you
-should use `--dist-url` or `--nodedir` flags to specify the headers of the
-runtime to build for.
+[commands]
+  www     = ./commands/www
+  console = ./commands/repl
 
-Also when `--dist-url` or `--nodedir` flags are passed, node-gyp will use the
-`config.gypi` shipped in the headers distribution to generate build
-configurations, which is different from the default mode that would use the
-`process.config` object of the running Node.js instance.
 
-Some old versions of Electron shipped malformed `config.gypi` in their headers
-distributions, and you might need to pass `--force-process-config` to node-gyp
-to work around configuration errors.
+; You can even do nested sections
 
-## How to Use
+[generators.options]
+  engine  = ejs
 
-To compile your native addon first go to its root directory:
+[generators.modules]
+  new     = generate-new
+  engine  = generate-backend
 
-``` bash
-cd my_node_addon
-```
-
-The next step is to generate the appropriate project build files for the current
-platform. Use `configure` for that:
-
-``` bash
-node-gyp configure
-```
-
-Auto-detection fails for Visual C++ Build Tools 2015, so `--msvs_version=2015`
-needs to be added (not needed when run by npm as configured above):
-``` bash
-node-gyp configure --msvs_version=2015
 ```
 
-__Note__: The `configure` step looks for a `binding.gyp` file in the current
-directory to process. See below for instructions on creating a `binding.gyp` file.
+#### Formatted as `json`
 
-Now you will have either a `Makefile` (on Unix platforms) or a `vcxproj` file
-(on Windows) in the `build/` directory. Next, invoke the `build` command:
-
-``` bash
-node-gyp build
-```
-
-Now you have your compiled `.node` bindings file! The compiled bindings end up
-in `build/Debug/` or `build/Release/`, depending on the build mode. At this point,
-you can require the `.node` file with Node.js and run your tests!
-
-__Note:__ To create a _Debug_ build of the bindings file, pass the `--debug` (or
-`-d`) switch when running either the `configure`, `build` or `rebuild` commands.
-
-## The `binding.gyp` file
-
-A `binding.gyp` file describes the configuration to build your module, in a
-JSON-like format. This file gets placed in the root of your package, alongside
-`package.json`.
-
-A barebones `gyp` file appropriate for building a Node.js addon could look like:
-
-```python
+```javascript
 {
-  "targets": [
-    {
-      "target_name": "binding",
-      "sources": [ "src/binding.cc" ]
+  // You can even comment your JSON, if you want
+  "dependsOn": "0.10.0",
+  "commands": {
+    "www": "./commands/www",
+    "console": "./commands/repl"
+  },
+  "generators": {
+    "options": {
+      "engine": "ejs"
+    },
+    "modules": {
+      "new": "generate-new",
+      "backend": "generate-backend"
     }
-  ]
-}
-```
-
-## Further reading
-
-The **[docs](./docs/)** directory contains additional documentation on specific node-gyp topics that may be useful if you are experiencing problems installing or building addons using node-gyp.
-
-Some additional resources for Node.js native addons and writing `gyp` configuration files:
-
- * ["Going Native" a nodeschool.io tutorial](http://nodeschool.io/#goingnative)
- * ["Hello World" node addon example](https://github.com/nodejs/node/tree/main/test/addons/hello-world)
- * [gyp user documentation](https://gyp.gsrc.io/docs/UserDocumentation.md)
- * [gyp input format reference](https://gyp.gsrc.io/docs/InputFormatReference.md)
- * [*"binding.gyp" files out in the wild* wiki page](./docs/binding.gyp-files-in-the-wild.md)
-
-## Commands
-
-`node-gyp` responds to the following commands:
-
-| **Command**   | **Description**
-|:--------------|:---------------------------------------------------------------
-| `help`        | Shows the help dialog
-| `build`       | Invokes `make`/`msbuild.exe` and builds the native addon
-| `clean`       | Removes the `build` directory if it exists
-| `configure`   | Generates project build files for the current platform
-| `rebuild`     | Runs `clean`, `configure` and `build` all in a row
-| `install`     | Installs Node.js header files for the given version
-| `list`        | Lists the currently installed Node.js header versions
-| `remove`      | Removes the Node.js header files for the given version
-
-
-## Command Options
-
-`node-gyp` accepts the following command options:
-
-| **Command**                       | **Description**
-|:----------------------------------|:------------------------------------------
-| `-j n`, `--jobs n`                | Run `make` in parallel. The value `max` will use all available CPU cores
-| `--target=v6.2.1`                 | Node.js version to build for (default is `process.version`)
-| `--silly`, `--loglevel=silly`     | Log all progress to console
-| `--verbose`, `--loglevel=verbose` | Log most progress to console
-| `--silent`, `--loglevel=silent`   | Don't log anything to console
-| `debug`, `--debug`                | Make Debug build (default is `Release`)
-| `--release`, `--no-debug`         | Make Release build
-| `-C $dir`, `--directory=$dir`     | Run command in different directory
-| `--make=$make`                    | Override `make` command (e.g. `gmake`)
-| `--thin=yes`                      | Enable thin static libraries
-| `--arch=$arch`                    | Set target architecture (e.g. ia32)
-| `--tarball=$path`                 | Get headers from a local tarball
-| `--devdir=$path`                  | SDK download directory (default is OS cache directory)
-| `--ensure`                        | Don't reinstall headers if already present
-| `--dist-url=$url`                 | Download header tarball from custom URL
-| `--proxy=$url`                    | Set HTTP(S) proxy for downloading header tarball
-| `--noproxy=$urls`                 | Set urls to ignore proxies when downloading header tarball
-| `--cafile=$cafile`                | Override default CA chain (to download tarball)
-| `--nodedir=$path`                 | Set the path to the node source code
-| `--python=$path`                  | Set path to the Python binary
-| `--msvs_version=$version`         | Set Visual Studio version (Windows only)
-| `--solution=$solution`            | Set Visual Studio Solution version (Windows only)
-| `--force-process-config`          | Force using runtime's `process.config` object to generate `config.gypi` file
-
-## Configuration
-
-### package.json
-
-Use the `config` object in your package.json with each key in the form `node_gyp_OPTION_NAME`. Any of the command
-options listed above can be set (dashes in option names should be replaced by underscores).
-
-For example, to set `devdir` equal to `/tmp/.gyp`, your package.json would contain this:
-
-```json
-{
-  "config": {
-    "node_gyp_devdir": "/tmp/.gyp"
   }
 }
 ```
 
-### Environment variables
+Comments are stripped from JSON config via [strip-json-comments](https://github.com/sindresorhus/strip-json-comments).
 
-Use the form `npm_package_config_node_gyp_OPTION_NAME` for any of the command options listed
-above (dashes in option names should be replaced by underscores).
+> Since ini, and env variables do not have a standard for types, your application needs be prepared for strings.
 
-For example, to set `devdir` equal to `/tmp/.gyp`, you would:
+To ensure that string representations of booleans and numbers are always converted into their proper types (especially useful if you intend to do strict `===` comparisons), consider using a module such as [parse-strings-in-object](https://github.com/anselanza/parse-strings-in-object) to wrap the config object returned from rc.
 
-Run this on Unix:
 
-```bash
-export npm_package_config_node_gyp_devdir=/tmp/.gyp
+## Simple example demonstrating precedence
+Assume you have an application like this (notice the hard-coded defaults passed to rc):
+```
+const conf = require('rc')('myapp', {
+    port: 12345,
+    mode: 'test'
+});
+
+console.log(JSON.stringify(conf, null, 2));
+```
+You also have a file `config.json`, with these contents:
+```
+{
+  "port": 9000,
+  "foo": "from config json",
+  "something": "else"
+}
+```
+And a file `.myapprc` in the same folder, with these contents:
+```
+{
+  "port": "3001",
+  "foo": "bar"
+}
+```
+Here is the expected output from various commands:
+
+`node .`
+```
+{
+  "port": "3001",
+  "mode": "test",
+  "foo": "bar",
+  "_": [],
+  "configs": [
+    "/Users/stephen/repos/conftest/.myapprc"
+  ],
+  "config": "/Users/stephen/repos/conftest/.myapprc"
+}
+```
+*Default `mode` from hard-coded object is retained, but port is overridden by `.myapprc` file (automatically found based on appname match), and `foo` is added.*
+
+
+`node . --foo baz`
+```
+{
+  "port": "3001",
+  "mode": "test",
+  "foo": "baz",
+  "_": [],
+  "configs": [
+    "/Users/stephen/repos/conftest/.myapprc"
+  ],
+  "config": "/Users/stephen/repos/conftest/.myapprc"
+}
+```
+*Same result as above but `foo` is overridden because command-line arguments take precedence over `.myapprc` file.*
+
+`node . --foo barbar --config config.json`
+```
+{
+  "port": 9000,
+  "mode": "test",
+  "foo": "barbar",
+  "something": "else",
+  "_": [],
+  "config": "config.json",
+  "configs": [
+    "/Users/stephen/repos/conftest/.myapprc",
+    "config.json"
+  ]
+}
+```
+*Now the `port` comes from the `config.json` file specified (overriding the value from `.myapprc`), and `foo` value is overriden by command-line despite also being specified in the `config.json` file.*
+ 
+
+
+## Advanced Usage
+
+#### Pass in your own `argv`
+
+You may pass in your own `argv` as the third argument to `rc`.  This is in case you want to [use your own command-line opts parser](https://github.com/dominictarr/rc/pull/12).
+
+```javascript
+require('rc')(appname, defaults, customArgvParser);
 ```
 
-Or this on Windows:
+## Pass in your own parser
 
-```console
-set npm_package_config_node_gyp_devdir=c:\temp\.gyp
+If you have a special need to use a non-standard parser,
+you can do so by passing in the parser as the 4th argument.
+(leave the 3rd as null to get the default args parser)
+
+```javascript
+require('rc')(appname, defaults, null, parser);
 ```
 
-Note that in versions of npm before v11 it was possible to use the prefix `npm_config_` for
-environment variables. This was deprecated in npm@11 and will be removed in npm@12 so it
-is recommended to convert your environment variables to the above format.
+This may also be used to force a more strict format,
+such as strict, valid JSON only.
 
-### `npm` configuration for npm versions before v9
+## Note on Performance
 
-Use the form `OPTION_NAME` for any of the command options listed above.
+`rc` is running `fs.statSync`-- so make sure you don't use it in a hot code path (e.g. a request handler) 
 
-For example, to set `devdir` equal to `/tmp/.gyp`, you would run:
-
-```bash
-npm config set [--global] devdir /tmp/.gyp
-```
-
-**Note:** Configuration set via `npm` will only be used when `node-gyp`
-is run via `npm`, not when `node-gyp` is run directly.
 
 ## License
 
-`node-gyp` is available under the MIT license. See the [LICENSE
-file](LICENSE) for details.
+Multi-licensed under the two-clause BSD License, MIT License, or Apache License, version 2.0
