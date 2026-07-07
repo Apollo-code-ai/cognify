@@ -1,63 +1,98 @@
-import { _getProvider, getApp } from '@firebase/app';
-import { _ as _signInWithRedirect, a as _reauthenticateWithRedirect, b as _linkWithRedirect, r as registerAuth, i as initializeAuth, c as indexedDBLocalPersistence, d as cordovaPopupRedirectResolver } from './popup_redirect-167cbb8f.js';
-export { A as ActionCodeOperation, a6 as ActionCodeURL, y as AuthCredential, w as AuthErrorCodes, E as EmailAuthCredential, D as EmailAuthProvider, G as FacebookAuthProvider, F as FactorId, I as GithubAuthProvider, H as GoogleAuthProvider, z as OAuthCredential, J as OAuthProvider, O as OperationType, B as PhoneAuthCredential, P as ProviderId, K as SAMLAuthProvider, S as SignInMethod, T as TwitterAuthProvider, W as applyActionCode, j as beforeAuthStateChanged, e as browserLocalPersistence, f as browserSessionPersistence, X as checkActionCode, V as confirmPasswordReset, x as connectAuthEmulator, d as cordovaPopupRedirectResolver, Z as createUserWithEmailAndPassword, q as debugErrorMap, p as deleteUser, a3 as fetchSignInMethodsForEmail, ae as getAdditionalUserInfo, ab as getIdToken, ac as getIdTokenResult, ag as getMultiFactorResolver, g as getRedirectResult, C as inMemoryPersistence, c as indexedDBLocalPersistence, i as initializeAuth, h as initializeRecaptchaConfig, a1 as isSignInWithEmailLink, N as linkWithCredential, ah as multiFactor, k as onAuthStateChanged, o as onIdTokenChanged, a7 as parseActionCodeURL, t as prodErrorMap, Q as reauthenticateWithCredential, af as reload, n as revokeAccessToken, a4 as sendEmailVerification, U as sendPasswordResetEmail, a0 as sendSignInLinkToEmail, s as setPersistence, L as signInAnonymously, M as signInWithCredential, R as signInWithCustomToken, $ as signInWithEmailAndPassword, a2 as signInWithEmailLink, m as signOut, ad as unlink, l as updateCurrentUser, a9 as updateEmail, aa as updatePassword, a8 as updateProfile, u as useDeviceLanguage, v as validatePassword, a5 as verifyBeforeUpdateEmail, Y as verifyPasswordResetCode } from './popup_redirect-167cbb8f.js';
-import '@firebase/util';
-import '@firebase/component';
-import '@firebase/logger';
+'use strict';
 
-/**
- * @license
- * Copyright 2021 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-function signInWithRedirect(auth, provider, resolver) {
-    return _signInWithRedirect(auth, provider, resolver);
-}
-function reauthenticateWithRedirect(user, provider, resolver) {
-    return _reauthenticateWithRedirect(user, provider, resolver);
-}
-function linkWithRedirect(user, provider, resolver) {
-    return _linkWithRedirect(user, provider, resolver);
-}
+Object.defineProperty(exports, '__esModule', { value: true });
 
-/**
- * @license
- * Copyright 2021 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-function getAuth(app = getApp()) {
-    const provider = _getProvider(app, 'auth');
-    if (provider.isInitialized()) {
-        return provider.getImmediate();
-    }
-    return initializeAuth(app, {
-        persistence: indexedDBLocalPersistence,
-        popupRedirectResolver: cordovaPopupRedirectResolver
-    });
-}
-registerAuth("Cordova" /* ClientPlatform.CORDOVA */);
+var totp = require('./totp-9e84e53d.js');
+require('@firebase/app');
+require('@firebase/util');
+require('@firebase/component');
+require('@firebase/logger');
 
-export { getAuth, linkWithRedirect, reauthenticateWithRedirect, signInWithRedirect };
+
+
+exports.ActionCodeOperation = totp.ActionCodeOperation;
+exports.ActionCodeURL = totp.ActionCodeURL;
+exports.AuthCredential = totp.AuthCredential;
+exports.AuthErrorCodes = totp.AUTH_ERROR_CODES_MAP_DO_NOT_USE_INTERNALLY;
+exports.EmailAuthCredential = totp.EmailAuthCredential;
+exports.EmailAuthProvider = totp.EmailAuthProvider;
+exports.FacebookAuthProvider = totp.FacebookAuthProvider;
+exports.FactorId = totp.FactorId;
+exports.GithubAuthProvider = totp.GithubAuthProvider;
+exports.GoogleAuthProvider = totp.GoogleAuthProvider;
+exports.OAuthCredential = totp.OAuthCredential;
+exports.OAuthProvider = totp.OAuthProvider;
+exports.OperationType = totp.OperationType;
+exports.PhoneAuthCredential = totp.PhoneAuthCredential;
+exports.PhoneAuthProvider = totp.PhoneAuthProvider;
+exports.PhoneMultiFactorGenerator = totp.PhoneMultiFactorGenerator;
+exports.ProviderId = totp.ProviderId;
+exports.RecaptchaVerifier = totp.RecaptchaVerifier;
+exports.SAMLAuthProvider = totp.SAMLAuthProvider;
+exports.SignInMethod = totp.SignInMethod;
+exports.TotpMultiFactorGenerator = totp.TotpMultiFactorGenerator;
+exports.TotpSecret = totp.TotpSecret;
+exports.TwitterAuthProvider = totp.TwitterAuthProvider;
+exports.applyActionCode = totp.applyActionCode;
+exports.beforeAuthStateChanged = totp.beforeAuthStateChanged;
+exports.browserCookiePersistence = totp.browserCookiePersistence;
+exports.browserLocalPersistence = totp.browserLocalPersistence;
+exports.browserPopupRedirectResolver = totp.browserPopupRedirectResolver;
+exports.browserSessionPersistence = totp.browserSessionPersistence;
+exports.checkActionCode = totp.checkActionCode;
+exports.confirmPasswordReset = totp.confirmPasswordReset;
+exports.connectAuthEmulator = totp.connectAuthEmulator;
+exports.createUserWithEmailAndPassword = totp.createUserWithEmailAndPassword;
+exports.debugErrorMap = totp.debugErrorMap;
+exports.deleteUser = totp.deleteUser;
+exports.fetchSignInMethodsForEmail = totp.fetchSignInMethodsForEmail;
+exports.getAdditionalUserInfo = totp.getAdditionalUserInfo;
+exports.getAuth = totp.getAuth;
+exports.getIdToken = totp.getIdToken;
+exports.getIdTokenResult = totp.getIdTokenResult;
+exports.getMultiFactorResolver = totp.getMultiFactorResolver;
+exports.getRedirectResult = totp.getRedirectResult;
+exports.inMemoryPersistence = totp.inMemoryPersistence;
+exports.indexedDBLocalPersistence = totp.indexedDBLocalPersistence;
+exports.initializeAuth = totp.initializeAuth;
+exports.initializeRecaptchaConfig = totp.initializeRecaptchaConfig;
+exports.isSignInWithEmailLink = totp.isSignInWithEmailLink;
+exports.linkWithCredential = totp.linkWithCredential;
+exports.linkWithPhoneNumber = totp.linkWithPhoneNumber;
+exports.linkWithPopup = totp.linkWithPopup;
+exports.linkWithRedirect = totp.linkWithRedirect;
+exports.multiFactor = totp.multiFactor;
+exports.onAuthStateChanged = totp.onAuthStateChanged;
+exports.onIdTokenChanged = totp.onIdTokenChanged;
+exports.parseActionCodeURL = totp.parseActionCodeURL;
+exports.prodErrorMap = totp.prodErrorMap;
+exports.reauthenticateWithCredential = totp.reauthenticateWithCredential;
+exports.reauthenticateWithPhoneNumber = totp.reauthenticateWithPhoneNumber;
+exports.reauthenticateWithPopup = totp.reauthenticateWithPopup;
+exports.reauthenticateWithRedirect = totp.reauthenticateWithRedirect;
+exports.reload = totp.reload;
+exports.revokeAccessToken = totp.revokeAccessToken;
+exports.sendEmailVerification = totp.sendEmailVerification;
+exports.sendPasswordResetEmail = totp.sendPasswordResetEmail;
+exports.sendSignInLinkToEmail = totp.sendSignInLinkToEmail;
+exports.setPersistence = totp.setPersistence;
+exports.signInAnonymously = totp.signInAnonymously;
+exports.signInWithCredential = totp.signInWithCredential;
+exports.signInWithCustomToken = totp.signInWithCustomToken;
+exports.signInWithEmailAndPassword = totp.signInWithEmailAndPassword;
+exports.signInWithEmailLink = totp.signInWithEmailLink;
+exports.signInWithPhoneNumber = totp.signInWithPhoneNumber;
+exports.signInWithPopup = totp.signInWithPopup;
+exports.signInWithRedirect = totp.signInWithRedirect;
+exports.signOut = totp.signOut;
+exports.unlink = totp.unlink;
+exports.updateCurrentUser = totp.updateCurrentUser;
+exports.updateEmail = totp.updateEmail;
+exports.updatePassword = totp.updatePassword;
+exports.updatePhoneNumber = totp.updatePhoneNumber;
+exports.updateProfile = totp.updateProfile;
+exports.useDeviceLanguage = totp.useDeviceLanguage;
+exports.validatePassword = totp.validatePassword;
+exports.verifyBeforeUpdateEmail = totp.verifyBeforeUpdateEmail;
+exports.verifyPasswordResetCode = totp.verifyPasswordResetCode;
 //# sourceMappingURL=index.js.map
