@@ -1,12 +1,8 @@
-'use strict';
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var installations = require('@firebase/installations');
-var component = require('@firebase/component');
-var idb = require('idb');
-var util = require('@firebase/util');
-var app = require('@firebase/app');
+import { onIdChange } from '@firebase/installations';
+import { Component } from '@firebase/component';
+import { openDB, deleteDB } from 'idb';
+import { ErrorFactory, validateIndexedDBOpenable, isIndexedDBAvailable, areCookiesEnabled, getModularInstance } from '@firebase/util';
+import { _registerComponent, registerVersion, _getProvider, getApp } from '@firebase/app';
 
 /**
  * @license
@@ -130,7 +126,7 @@ async function migrateOldDatabase(senderId) {
         }
     }
     let tokenDetails = null;
-    const db = await idb.openDB(OLD_DB_NAME, OLD_DB_VERSION, {
+    const db = await openDB(OLD_DB_NAME, OLD_DB_VERSION, {
         upgrade: async (db, oldVersion, newVersion, upgradeTransaction) => {
             if (oldVersion < 2) {
                 // Database too old, skip migration.
@@ -198,9 +194,9 @@ async function migrateOldDatabase(senderId) {
     });
     db.close();
     // Delete all old databases.
-    await idb.deleteDB(OLD_DB_NAME);
-    await idb.deleteDB('fcm_vapid_details_db');
-    await idb.deleteDB('undefined');
+    await deleteDB(OLD_DB_NAME);
+    await deleteDB('fcm_vapid_details_db');
+    await deleteDB('undefined');
     return checkTokenDetails(tokenDetails) ? tokenDetails : null;
 }
 function checkTokenDetails(tokenDetails) {
@@ -269,7 +265,7 @@ const ERROR_MAP = {
         'called before calling getToken() to ensure your VAPID key is used.',
     ["invalid-on-registered-handler" /* ErrorCode.INVALID_ON_REGISTERED_HANDLER */]: 'No onRegistered callback handler was provided or registered. Implement onRegistered() before register().'
 };
-const ERROR_FACTORY = new util.ErrorFactory('messaging', 'Messaging', ERROR_MAP);
+const ERROR_FACTORY = new ErrorFactory('messaging', 'Messaging', ERROR_MAP);
 
 /**
  * @license
@@ -291,7 +287,7 @@ const DATABASE_NAME = 'firebase-messaging-database';
 const DATABASE_VERSION = 2;
 const TOKEN_OBJECT_STORE_NAME = 'firebase-messaging-store';
 const FID_REGISTRATION_OBJECT_STORE_NAME = 'firebase-messaging-fid-registration-store';
-const defaultIdb = { openDB: idb.openDB, deleteDB: idb.deleteDB };
+const defaultIdb = { openDB, deleteDB };
 let idbImpl = defaultIdb;
 // Open v2, but fall back to v1 if upgrade/open fails. Cache as `unknown` and guard store access.
 let dbPromise = null;
@@ -1184,8 +1180,8 @@ async function register$1(messaging, options) {
  * onRegistered run for the new FID. No-op if no onRegistered handler is set or the app
  * instance was never registered with FCM.
  */
-function subscribeFidChangeRegistration(messaging, installations$1) {
-    return installations.onIdChange(installations$1, () => {
+function subscribeFidChangeRegistration(messaging, installations) {
+    return onIdChange(installations, () => {
         void (async () => {
             if (!messaging.onRegisteredHandler) {
                 return;
@@ -1589,11 +1585,11 @@ const WindowMessagingInternalFactory = (container) => {
     return messagingInternal;
 };
 function registerMessagingInWindow() {
-    app._registerComponent(new component.Component('messaging', WindowMessagingFactory, "PUBLIC" /* ComponentType.PUBLIC */));
-    app._registerComponent(new component.Component('messaging-internal', WindowMessagingInternalFactory, "PRIVATE" /* ComponentType.PRIVATE */));
-    app.registerVersion(name, version);
+    _registerComponent(new Component('messaging', WindowMessagingFactory, "PUBLIC" /* ComponentType.PUBLIC */));
+    _registerComponent(new Component('messaging-internal', WindowMessagingInternalFactory, "PRIVATE" /* ComponentType.PRIVATE */));
+    registerVersion(name, version);
     // BUILD_TARGET will be replaced by values like esm, cjs, etc during the compilation
-    app.registerVersion(name, version, 'cjs2020');
+    registerVersion(name, version, 'esm2020');
 }
 
 /**
@@ -1622,7 +1618,7 @@ async function isWindowSupported() {
     try {
         // This throws if open() is unsupported, so adding it to the conditional
         // statement below can cause an uncaught error.
-        await util.validateIndexedDBOpenable();
+        await validateIndexedDBOpenable();
     }
     catch (e) {
         return false;
@@ -1631,8 +1627,8 @@ async function isWindowSupported() {
     // might be prohibited to run. In these contexts, an error would be thrown during the messaging
     // instantiating phase, informing the developers to import/call isSupported for special handling.
     return (typeof window !== 'undefined' &&
-        util.isIndexedDBAvailable() &&
-        util.areCookiesEnabled() &&
+        isIndexedDBAvailable() &&
+        areCookiesEnabled() &&
         'serviceWorker' in navigator &&
         'PushManager' in window &&
         'Notification' in window &&
@@ -1839,7 +1835,7 @@ async function unregister$1(messaging) {
  *
  * @public
  */
-function getMessagingInWindow(app$1 = app.getApp()) {
+function getMessagingInWindow(app = getApp()) {
     // Conscious decision to make this async check non-blocking during the messaging instance
     // initialization phase for performance consideration. An error would be thrown latter for
     // developer's information. Developers can then choose to import and call `isSupported` for
@@ -1853,7 +1849,7 @@ function getMessagingInWindow(app$1 = app.getApp()) {
         // If `isWindowSupported()` rejected.
         throw ERROR_FACTORY.create("indexed-db-unsupported" /* ErrorCode.INDEXED_DB_UNSUPPORTED */);
     });
-    return app._getProvider(util.getModularInstance(app$1), 'messaging').getImmediate();
+    return _getProvider(getModularInstance(app), 'messaging').getImmediate();
 }
 /**
  * Subscribes the {@link Messaging} instance to push notifications. Returns a Firebase Cloud
@@ -1874,7 +1870,7 @@ function getMessagingInWindow(app$1 = app.getApp()) {
  * @public
  */
 async function getToken(messaging, options) {
-    messaging = util.getModularInstance(messaging);
+    messaging = getModularInstance(messaging);
     return getToken$1(messaging, options);
 }
 /**
@@ -1896,7 +1892,7 @@ async function getToken(messaging, options) {
  * @public
  */
 function deleteToken(messaging) {
-    messaging = util.getModularInstance(messaging);
+    messaging = getModularInstance(messaging);
     return deleteToken$1(messaging);
 }
 /**
@@ -1913,7 +1909,7 @@ function deleteToken(messaging) {
  * @public
  */
 function onMessage(messaging, nextOrObserver) {
-    messaging = util.getModularInstance(messaging);
+    messaging = getModularInstance(messaging);
     return onMessage$1(messaging, nextOrObserver);
 }
 /**
@@ -1930,7 +1926,7 @@ function onMessage(messaging, nextOrObserver) {
  * @public
  */
 async function register(messaging, options) {
-    messaging = util.getModularInstance(messaging);
+    messaging = getModularInstance(messaging);
     return register$1(messaging, options);
 }
 /**
@@ -1942,7 +1938,7 @@ async function register(messaging, options) {
  * @public
  */
 async function unregister(messaging) {
-    messaging = util.getModularInstance(messaging);
+    messaging = getModularInstance(messaging);
     return unregister$1(messaging);
 }
 /**
@@ -1957,7 +1953,7 @@ async function unregister(messaging) {
  * @public
  */
 function onRegistered(messaging, nextOrObserver) {
-    messaging = util.getModularInstance(messaging);
+    messaging = getModularInstance(messaging);
     return onRegistered$1(messaging, nextOrObserver);
 }
 /**
@@ -1971,7 +1967,7 @@ function onRegistered(messaging, nextOrObserver) {
  * @public
  */
 function onUnregistered(messaging, nextOrObserver) {
-    messaging = util.getModularInstance(messaging);
+    messaging = getModularInstance(messaging);
     return onUnregistered$1(messaging, nextOrObserver);
 }
 
@@ -1983,13 +1979,5 @@ function onUnregistered(messaging, nextOrObserver) {
  */
 registerMessagingInWindow();
 
-exports.deleteToken = deleteToken;
-exports.getMessaging = getMessagingInWindow;
-exports.getToken = getToken;
-exports.isSupported = isWindowSupported;
-exports.onMessage = onMessage;
-exports.onRegistered = onRegistered;
-exports.onUnregistered = onUnregistered;
-exports.register = register;
-exports.unregister = unregister;
-//# sourceMappingURL=index.cjs.js.map
+export { deleteToken, getMessagingInWindow as getMessaging, getToken, isWindowSupported as isSupported, onMessage, onRegistered, onUnregistered, register, unregister };
+//# sourceMappingURL=index.esm.js.map
