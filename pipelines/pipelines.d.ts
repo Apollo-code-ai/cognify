@@ -1,9 +1,4 @@
 /**
- * Cloud Firestore
- *
- * @packageDocumentation
- */
-/**
  * @license
  * Copyright 2025 Google LLC
  *
@@ -19,5 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export type { Timestamp, DocumentReference, VectorValue, GeoPoint, FieldPath, DocumentData, Query, Firestore, FirestoreDataConverter, WithFieldValue, PartialWithFieldValue, SetOptions, QueryDocumentSnapshot, SnapshotOptions, Primitive, FieldValue, SnapshotMetadata, Bytes, SnapshotListenOptions, Unsubscribe, DocumentChangeType, ListenSource } from '../src/api';
-export * from '../src/api_pipelines';
+import { PipelineSource, Pipeline } from '../dist/pipelines';
+
+// Augment the Firestore and Query classes with the pipeline() method.
+// This is stripped from dist/lite/pipelines.d.ts during the build
+// so it needs to be re-added here.
+declare module '@firebase/firestore' {
+  interface Firestore {
+    pipeline(): PipelineSource<Pipeline>;
+  }
+}
+
+export * from '../dist/pipelines';
